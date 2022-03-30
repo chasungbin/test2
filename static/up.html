@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- font-awesome CSS -->
+    <script src="https://kit.fontawesome.com/727ce840af.js" crossorigin="anonymous"></script>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+
+    <!-- 날짜 CDN -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+
+    <title> 게시판 만들기</title>
+    <script src="get-self.js"></script>
+</head>
+<style>
+    .wrap {
+        width: 800px;
+        margin: auto;
+    }
+
+    .form-group {
+        margin-top: 30px;
+    }
+
+    .label {
+        margin-top: 20px;
+    }
+
+    .btncls {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        margin-top: 10px;
+    }
+
+    .btn-primary {
+        margin-left: 20px;
+    }
+
+    .inputPwd {
+        width: 200px;
+        margin-left: 10px;
+        -webkit-text-security: disc;
+    }
+</style>
+<script>
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const _id = urlParams.get("_id");
+
+    $(document).ready(function () {
+        get_detail()
+        localStorage.getItem("token")
+    })
+    //상세페이지 정보
+    //a 태그로 들어온 정보를 주소에 파라미터 값으로 넣어서 ajax콜을 함.
+    function get_detail() {
+        $.ajax({
+            type: "GET",
+            url: `api/blogs/${_id}`,
+            data: {},
+            dataType: "json",
+            success: function (response) {
+                let bordersDetail = response["bords"];
+                console.log(bordersDetail)
+                let date = moment(bordersDetail['borderDate']).format('YYYY-MM-DD HH:mm')
+                let nickname = bordersDetail['nickname']
+                // console.log(bordersDetail)
+                // console.log(date)
+                $("#borderName").val(bordersDetail["title"])
+                $("#borderDate").text(date);
+                $("#borderContent").text(bordersDetail["comment"]);
+            }
+        });
+    }
+
+
+
+    // 글을 수정하면서 date 값도 바꾸려고 했으나, date값은 api get할 시 필요한 데이터이기도 하고, 서버와의 연결도 date로 하기 때문에 변경 안함.
+    function correct() {
+        $.ajax({
+            type: "PATCH",
+            url: `/api/blogs/${_id}`,
+            data: {
+                //바뀐 데이터
+                title: $(borderName).val(),
+                comment: $(borderContent).val()
+            },
+            dataType: "json",
+            headers: {
+                authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            success: function (response) {
+                console.log(response)
+                if (response["result"] == "success") {
+                    alert("글이 등록 되었습니다.");
+                    window.location.href = "/"
+                }else{
+                    alert("정보가 일지치 하지 않습니다")
+                }
+            }
+        });
+    }
+    console.log(correct())
+    //취소 버튼 시 뒤로가기 기능
+    function back() {
+        location.href = 'javascript:history.back();'
+    }
+
+</script>
+
+<body>
+    <div class='wrap'>
+        <h1>수정 게시판</h1>
+        <div class="form-group">
+            <div class="label">
+                <label for="exampleFormControlInput1" style="font-weight: bold;">제목 :</label>
+                <input type="text" id="borderName" /></label>
+            </div>
+            <div class="label">
+                <label for="exampleFormControlInput1" style="font-weight: bold;">작성했던 날짜 : </label>
+                <label id="borderDate"></label>
+            </div>
+            <div class="label">
+                <label for="exampleFormControlInput1">내용</label>
+                <textarea class="form-control" id="borderContent" type="text" rows="10"></textarea>
+            </div>
+        </div>
+        <div class="btncls">
+            <button class="btn btn-primary" type="submit" onclick="correct()">수정 완료</button>
+            <button class="btn btn-primary" type="submit" onclick="back()">취소</button>
+        </div>
+    </div>
+    <div class="modal text-left" id="cartModal" tabindex="-1" role="dialog" aria-labelledby="cartModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cartModalLabel">알림</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    비밀번호를 입력하세요
+                </div>
+                <input class="inputPwd" id="borderPwd" type="password" placeholder="숫자를 입력하세요" />
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sparta" onclick='modal_ok()'>
+                        확인
+                    </button>
+                    <button type="button" class="btn btn-outline-sparta" data-dismiss="modal">
+                        취소
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

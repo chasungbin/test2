@@ -1,0 +1,289 @@
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <!-- font-awesome CSS -->
+  <script src="https://kit.fontawesome.com/727ce840af.js" crossorigin="anonymous"></script>
+
+  <!-- Optional JavaScript -->
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+    integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+    crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+    integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"></script>
+
+  <!-- 날짜 CDN -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+  <script src="get-self.js"></script>
+  <!-- <link href="mystyle.css" rel="stylesheet"> -->
+  <title> 게시판 만들기</title>
+</head>
+<style>
+  .wrap {
+    width: 800px;
+    margin: auto;
+  }
+
+  .form-group {
+    margin-top: 30px;
+  }
+
+  .label {
+    margin-top: 20px;
+  }
+
+  .btncls {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    margin-top: 10px;
+  }
+
+  .btn-primary {
+    margin-left: 20px;
+  }
+
+  .inputPwd {
+    width: 200px;
+    margin-left: 10px;
+    -webkit-text-security: disc;
+  }
+</style>
+
+<script>
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const _id = urlParams.get("_id");
+
+
+  $(document).ready(function () {
+    get_detail()
+    loadComment()
+    if(!localStorage.getItem("token")) {
+      $("#dt").hide()
+      $("#up").hide()
+    }
+
+  })
+  //작성글 불러오기
+  function get_detail() {
+    $.ajax({
+      type: "GET",
+      url: `api/blogs/${_id}`,
+      data: {},
+      dataType: "json",
+      success: function (response) {
+        let blogsDetail = response["bords"];
+        //console.log(blogsDetail);
+
+        // //db에 저장된 date moment 포맷으로 변경
+        let date = moment(blogsDetail['borderDate']).format('YYYY-MM-DD HH:mm')
+        // // console.log(date)
+        $("#borderNick").text(blogsDetail["nickname"])
+        $("#borderName").text(blogsDetail["title"]);
+        $("#borderDate").text(date);
+        $("#borderContent").text(blogsDetail["comment"]);
+      }
+    });
+  }
+  //수정 버튼
+  function correct(blogsDetail) {
+    location.href = `/up.html?_id=${postId}`
+  };
+
+ 
+  //삭제
+  function remove() {
+    $.ajax({
+      type: "DELETE",
+      url: `/api/blogs/${postId}`,
+      headers: {
+        authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      data: {},
+      dataType: "json",
+      success: function (response) {
+        if (response["result"] == "success") {
+          location.href = "/"
+        } else {
+          alert("아이디가 다릅니다")
+        }
+      }
+    });
+  }
+
+  // 댓글 작성
+  function saveComment() {
+      if ($('#descriptionComment').val().length === 0) { // 어디서 뭘 가져올거고 가져 갈건지 명확하게 생각해서 써라
+        alert("댓글 내용을 입력해 주세요")
+        window.location.reload()
+      } else {
+        $.ajax({
+          type: "POST",
+          url: "/api/comment",
+          data: {
+            postId : _id,
+            description: $('#descriptionComment').val(),
+          },
+          headers: {
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          success: function (response) {
+            if (response["result"] == "success") {
+              alert("댓글 작성 완료!")
+            }
+            window.location.reload()
+          }
+        })
+      }
+    }
+
+
+  function loadComment() {
+      $.ajax({
+        type: "GET",
+        url: `/api/comment/${_id}`,
+        data: {},
+        success: function (response) {
+          let comment = response["comment"]
+          console.log(comment) // 함 찍어 봤다
+          for (let i = 0; i < comment.length; i++) {
+            let author = comment[i]['nickname']
+            let description = comment[i]['description']
+            let date = comment[i]['date']
+            let commentId = comment[i]['commentId']
+            let temp_html = `<tr>
+                                <td>${author}</td>
+                                <td id="desc${commentId}">${description}</td>
+                            </tr>`
+
+            let temp_html2 = `<button onclick="modifyComment(${commentId})" id="btn-modify${commentId}" type="button" class="btn btn1 btn-secondary btn-sm">Update</button>
+                            <button onclick="deleteComment(${commentId})" id="btn-delete" type="button" class="btn btn1 btn-secondary btn-sm">Delete</button>`
+            $('#commentList').append(temp_html)
+            $('#commentBtn').append(temp_html2)
+          }
+        }
+      })
+    }
+    function deleteComment(commentId) {
+      if (confirm("정말로 삭제하시겠습니까?") == true) {
+        $.ajax({
+          type: "DELETE",
+          url: `/api/comment`,
+          data: { commentId },
+          headers: {
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          success: function (response) {
+            alert(response['msg'])
+            window.location.reload()
+          }
+        })
+
+      }
+      else {
+        return;
+      }
+    }
+    function modifyComment(commentId) {
+      if ($('#btn-modify' + commentId).text() === '수정완료') {
+        $.ajax({
+          type: "PATCH",
+          url: `/api/comment`,
+          data: {
+            commentId,
+            description: $('#newDesc').val(),
+          },
+          headers: {
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          success: function (response) {
+            alert(response['msg'])
+            window.location.reload()
+          }
+
+        })
+      }
+      let baseComment = $('#desc' + commentId).text()
+      $('#desc'+ commentId ).empty()
+      $("#desc"+ commentId ).append(`<textarea id="newDesc">${baseComment}</textarea>`);
+      $('#btn-modify' + commentId).empty()
+      $('#btn-modify' + commentId).append(`수정완료`)
+
+    }
+    console.log()
+    function alarm() {
+      if (localStorage.getItem("token") === null) {
+        alert("로그인이 필요한 기능입니다")
+        window.location.href = 'login'
+      }
+    }
+
+
+
+</script>
+
+<body>
+  <div class='wrap'>
+    <h1>상세 게시판</h1>
+    <div class="form-group">
+      <div class="label">
+        <label for="exampleFormControlInput1" style="font-weight: bold;">제목 :</label>
+        <label id="borderName"></label>
+      </div>
+      <div class="label">
+        <label for="exampleFormControlInput1" style="font-weight: bold;">작성자 :</label>
+        <label id="borderNick"></label>
+      </div>
+      <div class="label">
+        <label for="exampleFormControlInput1" style="font-weight: bold;">작성 날짜 : </label>
+        <label id="borderDate"></label>
+      </div>
+      <div class="label">
+        <label for="exampleFormControlInput1">내용</label>
+        <textarea class="form-control" id="borderContent" type="text" rows="10" readonly></textarea>
+      </div>
+    </div>
+    <div class="btncls">
+      <button class="btn btn-primary" type="submit" onclick="correct()" id="up">수정</button>
+      <button class="btn btn-primary" type="submit" onclick="remove()" id="dt">삭제</button>
+    </div>
+  </div>
+
+  <div class="input-box" id="posting-comment">
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon3">Comment</span>
+      </div>
+      <input onclick="alarm()" type="text" class="form-control" id="descriptionComment" aria-describedby="basic-addon3" maxlength="10">
+    </div>
+  </div>
+  <button type="submit" class="btn btn1 btn-outline-dark" onclick="saveComment()" id="comment-btn">Upload</button>
+  <table class="table" id="comment-table">
+    <thead>
+      <tr>
+        <th scope="col">Nickname</th>
+        <th scope="col">Comment</th>
+      </tr>
+    </thead>
+    <tbody id="commentList"></tbody>
+    <div id="commentBtn">
+
+    </div>
+  </table>
+
+      </div>
+    </div>
+  </div>
+  </div>
+</body>
+
+</html>
