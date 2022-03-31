@@ -163,12 +163,12 @@
             let temp_html = `<tr>
                                 <td>${author}</td>
                                 <td id="desc${commentId}">${description}</td>
+                                <td><button onclick="modifyComment(${commentId})" id="btn-modify${commentId}" type="button" class="btn btn1 btn-secondary btn-sm">Update</button></td>
+                                <td> <button onclick="deleteComment(${commentId})" id="btn-delete" type="button" class="btn btn1 btn-secondary btn-sm">Delete</button></td>
                             </tr>`
 
-            let temp_html2 = `<button onclick="modifyComment(${commentId})" id="btn-modify${commentId}" type="button" class="btn btn1 btn-secondary btn-sm">Update</button>
-                            <button onclick="deleteComment(${commentId})" id="btn-delete" type="button" class="btn btn1 btn-secondary btn-sm">Delete</button>`
+          
             $('#commentList').append(temp_html)
-            $('#commentBtn').append(temp_html2)
           }
         }
       })
