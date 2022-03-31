@@ -104,7 +104,7 @@
   function remove() {
     $.ajax({
       type: "DELETE",
-      url: `/api/blogs/${postId}`,
+      url: `/api/blogs/${_id}`,
       headers: {
         authorization: `Bearer ${localStorage.getItem("token")}`,
       },
